@@ -19,9 +19,9 @@ class StorageImpl {
 
   RandomAccessFile? _randomAccessfile;
 
-  void clear() async {
+  Future<void> clear() async {
     subject
-      ..value.clear()
+      ..value?.clear()
       ..changeValue("", null);
   }
 
@@ -32,7 +32,7 @@ class StorageImpl {
   }
 
   Future<void> flush() async {
-    final buffer = utf8.encode(json.encode(subject.value));
+    final buffer = utf8.encode(json.encode(subject.value ?? <String, dynamic>{}));
     final length = buffer.length;
     RandomAccessFile _file = await _getRandomFile();
 
@@ -47,22 +47,22 @@ class StorageImpl {
   void _madeBackup() {
     _getFile(true).then(
       (value) => value.writeAsString(
-        json.encode(subject.value),
+        json.encode(subject.value ?? <String, dynamic>{}),
         flush: true,
       ),
     );
   }
 
   T? read<T>(String key) {
-    return subject.value[key] as T?;
+    return subject.value?[key] as T?;
   }
 
   T getKeys<T>() {
-    return subject.value.keys as T;
+    return subject.value?.keys as T;
   }
 
   T getValues<T>() {
-    return subject.value.values as T;
+    return subject.value?.values as T;
   }
 
   Future<void> init([Map<String, dynamic>? initialData]) async {
@@ -74,13 +74,13 @@ class StorageImpl {
 
   void remove(String key) {
     subject
-      ..value.remove(key)
+      ..value?.remove(key)
       ..changeValue(key, null);
   }
 
   void write(String key, dynamic value) {
     subject
-      ..value[key] = value
+      ..value?[key] = value
       ..changeValue(key, value);
   }
 
@@ -88,9 +88,9 @@ class StorageImpl {
     try {
       RandomAccessFile _file = await _getRandomFile();
       _file = await _file.setPosition(0);
-      final buffer = new Uint8List(await _file.length());
+      final buffer = Uint8List(await _file.length());
       await _file.readInto(buffer);
-      subject.value = json.decode(utf8.decode(buffer));
+      subject.value = json.decode(utf8.decode(buffer)) as Map<String, dynamic>?;
     } catch (e) {
       Get.log('Corrupted box, recovering backup file', isError: true);
       final _file = await _getFile(true);

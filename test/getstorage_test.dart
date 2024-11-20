@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:get_storage/src/storage_impl.dart';
-import 'package:get_storage/src/read_write_value.dart';
+import 'package:sunday_get_storage/src/storage_impl.dart';
+import 'package:sunday_get_storage/src/read_write_value.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'utils/list_equality.dart';

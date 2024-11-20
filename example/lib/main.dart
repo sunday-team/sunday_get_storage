@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
-import 'package:get_storage/get_storage.dart';
+import 'package:sunday_get_storage/sunday_get_storage.dart';
 
 void main() async {
   await GetStorage.init();
@@ -19,7 +18,7 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(Controller());
-    return Observer(builder: (_) {
+    return Obx(() {
       return MaterialApp(
         theme: controller.theme,
         home: Scaffold(
