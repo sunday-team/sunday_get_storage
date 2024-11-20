@@ -15,11 +15,10 @@ class Controller extends GetxController {
 }
 
 class App extends StatelessWidget {
+  final controller = Get.put(Controller());
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(Controller());
-    return Obx(() {
-      return MaterialApp(
+    return MaterialApp(
         theme: controller.theme,
         home: Scaffold(
           appBar: AppBar(title: Text("Get Storage")),
@@ -32,6 +31,5 @@ class App extends StatelessWidget {
           ),
         ),
       );
-    });
   }
 }
