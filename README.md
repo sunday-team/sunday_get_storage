@@ -1,97 +1,96 @@
-# get_storage
-A fast, extra light and synchronous key-value in memory, which backs up data to disk at each operation.
-It is written entirely in Dart and easily integrates with Get framework of Flutter.
+# sunday_get_storage
+Un stockage clé-valeur rapide, ultra léger et synchrone en mémoire, qui sauvegarde les données sur le disque à chaque opération.
+Il est entièrement écrit en Dart et s'intègre facilement avec le framework Get de Flutter.
 
-Supports Android, iOS, Web, Mac, Linux, and fuchsia and Windows**. 
-Can store String, int, double, Map and List
+Prend en charge Android, iOS, Web, Mac, Linux, Fuchsia et Windows**.
+Peut stocker des String, int, double, Map et List
 
-### Add to your pubspec:
+### Ajoutez-le à votre pubspec :
 ```
 dependencies:
-  get_storage:
+  sunday_get_storage:
 ```
-### Install it
+### Installez-le
 
-You can install packages from the command line:
+Vous pouvez installer les packages depuis la ligne de commande :
 
-with `Flutter`:
+avec `Flutter` :
 
 ```css
 $  flutter packages get
 ```
 
-### Import it
+### Importez-le
 
-Now in your `Dart` code, you can use: 
+Maintenant, dans votre code `Dart`, vous pouvez utiliser :
 
 ````dart
-import 'package:get_storage/get_storage.dart';
+import 'package:sunday_get_storage/sunday_get_storage.dart';
 ````
 
-### Initialize storage driver with await:
+### Initialisez le pilote de stockage avec await :
 ```dart
 main() async {
   await GetStorage.init();
   runApp(App());
 }
 ```
-#### use GetStorage through an instance or use directly `GetStorage().read('key')`
+#### Utilisez GetStorage via une instance ou utilisez directement `GetStorage().read('key')`
 ```dart
 final box = GetStorage();
 ```
-#### To write information you must use `write` :
+#### Pour écrire des informations, vous devez utiliser `write` :
 ```dart
-box.write('quote', 'GetX is the best');
+box.write('quote', 'GetX est le meilleur');
 ```
 
-#### To read values you use `read`:
+#### Pour lire des valeurs, utilisez `read` :
 ```dart
 print(box.read('quote'));
-// out: GetX is the best
-
+// sortie : GetX est le meilleur
 ```
-#### To remove a key, you can use `remove`:
+#### Pour supprimer une clé, vous pouvez utiliser `remove` :
 
 ```dart
 box.remove('quote');
 ```
 
-#### To listen changes you can use `listen`:
+#### Pour écouter les changements, vous pouvez utiliser `listen` :
 ```dart
 Function? disposeListen;
 disposeListen = box.listen((){
-  print('box changed');
+  print('la boîte a changé');
 });
 ```
-#### If you subscribe to events, be sure to dispose them when using:
+#### Si vous vous abonnez à des événements, assurez-vous de les disposer lors de l'utilisation :
 ```dart
 disposeListen?.call();
 ```
-#### To listen changes on key you can use `listenKey`:
+#### Pour écouter les changements sur une clé, vous pouvez utiliser `listenKey` :
 
 ```dart
 box.listenKey('key', (value){
-  print('new key is $value');
+  print('nouvelle valeur de la clé : $value');
 });
 ```
 
-#### To erase your container:
+#### Pour effacer votre conteneur :
 ```dart
 box.erase();
 ```
 
-#### If you want to create different containers, simply give it a name. You can listen to specific containers, and also delete them.
+#### Si vous souhaitez créer différents conteneurs, donnez simplement un nom. Vous pouvez écouter des conteneurs spécifiques, et aussi les supprimer.
 
 ```dart
 GetStorage g = GetStorage('MyStorage');
 ```
 
-#### To initialize specific container:
+#### Pour initialiser un conteneur spécifique :
 ```dart
 await GetStorage.init('MyStorage');
 ```
 
-## SharedPreferences Implementation
+## Implémentation de SharedPreferences
 ```dart
 class MyPref {
   static final _otherBox = () => GetStorage('MyPref');
@@ -100,7 +99,7 @@ class MyPref {
   final age = 0.val('age');
   final price = 1000.val('price', getBox: _otherBox);
 
-  // or
+  // ou
   final username2 = ReadWriteValue('username', '');
   final age2 = ReadWriteValue('age', 0);
   final price2 = ReadWriteValue('price', '', _otherBox);
@@ -110,41 +109,39 @@ class MyPref {
 
 void updateAge() {
   final age = 0.val('age');
-  // or 
+  // ou 
   final age = ReadWriteValue('age', 0, () => box);
-  // or 
+  // ou 
   final age = Get.find<MyPref>().age;
 
-  age.val = 1; // will save to box
-  final realAge = age.val; // will read from box
+  age.val = 1; // sera sauvegardé dans la boîte
+  final realAge = age.val; // sera lu depuis la boîte
 }
 ```
 
-
-## Benchmark Result:
-**GetStorage is not fast, it is absurdly fast for being memory-based. All of his operations are instantaneous. A backup of each operation is placed in a Container on the disk. Each container has its own file.**
+## Résultat du Benchmark :
+**GetStorage n'est pas rapide, il est incroyablement rapide pour être basé sur la mémoire. Toutes ses opérations sont instantanées. Une sauvegarde de chaque opération est placée dans un conteneur sur le disque. Chaque conteneur a son propre fichier.**
 
 ![](delete.png)
 ![](write.png)
 ![](read.png)
 
-## What GetStorage is:
-Persistent key/value storage for Android, iOS, Web, Linux, Mac and Fuchsia and Windows, that combines fast memory access with persistent storage.
-## What GetStorage is NOT:
-A database. Get is super compact to offer you a solution ultra-light, high-speed read/write storage to work synchronously. If you want to store data persistently on disk with immediate memory access, use it, if you want a database, with indexing and specific disk storage tools, there are incredible solutions that are already available, like Hive and Sqflite/Moor.
+## Ce qu'est GetStorage :
+Un stockage clé/valeur persistant pour Android, iOS, Web, Linux, Mac, Fuchsia et Windows, qui combine un accès rapide en mémoire avec un stockage persistant.
+## Ce que GetStorage N'EST PAS :
+Une base de données. Get est super compact pour vous offrir une solution de stockage en lecture/écriture ultra-légère et à haute vitesse pour fonctionner de manière synchrone. Si vous souhaitez stocker des données de manière persistante sur le disque avec un accès immédiat à la mémoire, utilisez-le. Si vous voulez une base de données, avec indexation et outils de stockage spécifiques sur le disque, il existe des solutions incroyables déjà disponibles, comme Hive et Sqflite/Moor.
 
+Dès que vous déclarez "write", le fichier est immédiatement écrit en mémoire et peut maintenant être accédé immédiatement avec `box.read()`. Vous pouvez également attendre le callback indiquant qu'il a été écrit sur le disque en utilisant `await box.write()`.
 
-As soon as you declare "write" the file is immediately written in memory and can now be accessed immediately with `box.read()`. You can also wait for the callback that it was written to disk using `await box.write()`.
+## Quand utiliser GetStorage :
+  - Stockage simple de Maps.
+  - Cache des requêtes HTTP
+  - Stockage d'informations utilisateur simples.
+  - Stockage d'état simple et persistant
+  - Toute situation où vous utilisez actuellement sharedPreferences.
 
-## When to use GetStorage:
-  - simple Maps storage.
-  - cache of http requests
-  - storage of simple user information.
-  - simple and persistent state storage
-  - any situation you currently use sharedPreferences.
+## Quand ne pas utiliser GetStorage :
+  - vous avez besoin d'index.
+  -  lorsque vous devez toujours vérifier si le fichier a été écrit sur le disque de stockage avant de commencer une autre opération (le stockage en mémoire est fait instantanément et peut être lu instantanément avec box.read(), et la sauvegarde sur le disque est faite en arrière-plan. Pour s'assurer que la sauvegarde est complète, vous pouvez utiliser await, mais si vous devez appeler await tout le temps, il n'a pas de sens d'utiliser un stockage en mémoire).
 
-## When not to use GetStorage:
-  - you need indexes.
-  -  when you need to always check if the file was written to the storage disk before starting another operation (storage in memory is done instantly and can be read instantly with box.read(), and the backup to disk is done in the background. To make sure the backup is complete, you can use await, but if you need to call await all the time, it makes no sense you are using memory storage).
-
-### You can use this lib even as a modest persistent state manager using Getx SimpleBuilder
+### Vous pouvez utiliser cette librairie même comme un gestionnaire d'état persistant modeste en utilisant Getx SimpleBuilder
