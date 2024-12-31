@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../value.dart';
@@ -21,8 +20,8 @@ class StorageImpl {
 
   Future<void> clear() async {
     subject
-      ..value?.clear()
       ..changeValue("", null);
+    subject.value.clear();
   }
 
   Future<void> deleteBox() async {
@@ -32,37 +31,38 @@ class StorageImpl {
   }
 
   Future<void> flush() async {
-    final buffer = utf8.encode(json.encode(subject.value ?? <String, dynamic>{}));
+    final buffer =
+        utf8.encode(json.encode(subject.value));
     final length = buffer.length;
     RandomAccessFile _file = await _getRandomFile();
 
     _randomAccessfile = await _file.lock();
     _randomAccessfile = await _randomAccessfile!.setPosition(0);
-    _randomAccessfile = await _randomAccessfile!.writeFrom(buffer);
-    _randomAccessfile = await _randomAccessfile!.truncate(length);
-    _randomAccessfile = await _file.unlock();
+    await _randomAccessfile!.writeFrom(buffer);
+    await _randomAccessfile!.truncate(length);
+    await _file.unlock();
     _madeBackup();
   }
 
   void _madeBackup() {
     _getFile(true).then(
       (value) => value.writeAsString(
-        json.encode(subject.value ?? <String, dynamic>{}),
+        json.encode(subject.value),
         flush: true,
       ),
     );
   }
 
   T? read<T>(String key) {
-    return subject.value?[key] as T?;
+    return subject.value[key] as T?;
   }
 
-  T getKeys<T>() {
-    return subject.value?.keys as T;
+  Iterable<String> getKeys() {
+    return subject.value.keys;
   }
 
-  T getValues<T>() {
-    return subject.value?.values as T;
+  Iterable<dynamic> getValues() {
+    return subject.value.values;
   }
 
   Future<void> init([Map<String, dynamic>? initialData]) async {
@@ -74,14 +74,14 @@ class StorageImpl {
 
   void remove(String key) {
     subject
-      ..value?.remove(key)
       ..changeValue(key, null);
+    subject.value.remove(key);
   }
 
   void write(String key, dynamic value) {
     subject
-      ..value?[key] = value
       ..changeValue(key, value);
+    subject.value[key] = value;
   }
 
   Future<void> _readFile() async {
@@ -90,9 +90,8 @@ class StorageImpl {
       _file = await _file.setPosition(0);
       final buffer = Uint8List(await _file.length());
       await _file.readInto(buffer);
-      subject.value = json.decode(utf8.decode(buffer)) as Map<String, dynamic>?;
+      subject.value = json.decode(utf8.decode(buffer)) as Map<String, dynamic>;
     } catch (e) {
-      Get.log('Corrupted box, recovering backup file', isError: true);
       final _file = await _getFile(true);
 
       final content = await _file.readAsString()
@@ -102,9 +101,8 @@ class StorageImpl {
         subject.value = {};
       } else {
         try {
-          subject.value = (json.decode(content) as Map<String, dynamic>?) ?? {};
+          subject.value = (json.decode(content) as Map<String, dynamic>) ?? {};
         } catch (e) {
-          Get.log('Can not recover Corrupted box', isError: true);
           subject.value = {};
         }
       }
@@ -144,7 +142,7 @@ class StorageImpl {
   }
 
   Future<String> _getPath(bool isBackup, String? path) async {
-    final _isWindows = GetPlatform.isWindows;
+    final _isWindows = Platform.isWindows;
     final _separator = _isWindows ? '\\' : '/';
     return isBackup
         ? '$path$_separator$fileName.bak'

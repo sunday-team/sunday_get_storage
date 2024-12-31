@@ -1,35 +1,59 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:sunday_get_storage/sunday_get_storage.dart';
 
-void main() async {
-  await GetStorage.init();
-  runApp(App());
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  final box = GetStorage("main");
+  box.init();
+  runApp(MainApp());
 }
 
-class Controller extends GetxController {
-  final box = GetStorage();
-  bool get isDark => box.read('darkmode') ?? false;
-  ThemeData get theme => isDark ? ThemeData.dark() : ThemeData.light();
-  void changeTheme(bool val) => box.write('darkmode', val);
+class MainApp extends StatefulWidget {
+  const MainApp({Key? key}) : super(key: key);
+
+  @override
+  State<MainApp> createState() => _MainAppState();
 }
 
-class App extends StatelessWidget {
-  final controller = Get.put(Controller());
+class _MainAppState extends State<MainApp> {
+  var isDarkMode = false;
+  final box = GetStorage("main");
+
+  @override
+  void initState() {
+    super.initState();
+    box.listenKey('darkmode', (newValue) {
+      setState(() {
+        isDarkMode = newValue;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        theme: controller.theme,
-        home: Scaffold(
-          appBar: AppBar(title: Text("Get Storage")),
-          body: Center(
-            child: SwitchListTile(
-              value: controller.isDark,
-              title: Text("Touch to change ThemeMode"),
-              onChanged: controller.changeTheme,
-            ),
+      theme: isDarkMode
+          ? ThemeData.dark()
+          : ThemeData.from(colorScheme: ColorScheme.light()),
+      home: Scaffold(
+        appBar: AppBar(title: Text("Get Storage")),
+        body: Center(
+          child: SwitchListTile(
+            title: Text("Touch to change ThemeMode"),
+            value: isDarkMode,
+            onChanged: (bool value) {
+              box.write('darkmode', value);
+              setState(() {
+                isDarkMode = value;
+              });
+              if (kDebugMode) {
+                print(box.read("darkmode"));
+              }
+            },
           ),
         ),
-      );
+      ),
+    );
   }
 }

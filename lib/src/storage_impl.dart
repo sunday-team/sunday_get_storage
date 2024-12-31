@@ -1,53 +1,23 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
-import 'package:get/utils.dart';
+import 'package:flutter/material.dart';
 
 import 'storage/html.dart' if (dart.library.io) 'storage/io.dart';
 import 'value.dart';
 
-/// Instantiate GetStorage to access storage driver apis
+/// Instantiate Storage to access storage driver APIs
 class GetStorage {
-  factory GetStorage(
-      [String container = 'GetStorage',
-      String? path,
-      Map<String, dynamic>? initialData]) {
-    if (_sync.containsKey(container)) {
-      return _sync[container]!;
-    } else {
-      final instance = GetStorage._internal(container, path, initialData);
-      _sync[container] = instance;
-      return instance;
-    }
-  }
+  GetStorage(this.fileName, [this.path]);
 
-  GetStorage._internal(String key,
-      [String? path, Map<String, dynamic>? initialData]) {
-    _concrete = StorageImpl(key, path);
-    _initialData = initialData;
+  final String? path;
+  final String fileName;
 
-    initStorage = Future<bool>(() async {
-      await _init();
-      return true;
-    });
-  }
+  late StorageImpl _concrete;
+  final Map<String, List<void Function(dynamic)>> _listeners = {};
 
-  static final Map<String, GetStorage> _sync = {};
-
-  final microtask = Microtask();
-
-  /// Start the storage drive. It's important to use await before calling this API, or side effects will occur.
-  static Future<bool> init([String container = 'GetStorage']) {
-    WidgetsFlutterBinding.ensureInitialized();
-    return GetStorage(container).initStorage;
-  }
-
-  Future<void> _init() async {
-    try {
-      await _concrete.init(_initialData);
-    } catch (err) {
-      throw err;
-    }
+  Future<void> init([Map<String, dynamic>? initialData]) async {
+    _concrete = StorageImpl(fileName, path);
+    await _concrete.init(initialData);
   }
 
   /// Reads a value in your container with the given key.
@@ -55,128 +25,69 @@ class GetStorage {
     return _concrete.read(key);
   }
 
-  T getKeys<T>() {
+  Iterable<String> getKeys() {
     return _concrete.getKeys();
   }
 
-  T getValues<T>() {
+  Iterable<dynamic> getValues() {
     return _concrete.getValues();
   }
 
-  /// return data true if value is different of null;
+  /// Return true if value is different from null.
   bool hasData(String key) {
-    return (read(key) == null ? false : true);
+    return read(key) != null;
   }
-
-  Map<String, dynamic> get changes => _concrete.subject.changes;
-
-  /// Listen changes in your container
-  VoidCallback listen(VoidCallback value) {
-    return _concrete.subject.addListener(value);
-  }
-
-  Map<Function, Function> _keyListeners = <Function, Function>{};
-
-  VoidCallback listenKey(String key, ValueSetter callback) {
-    final VoidCallback listen = () {
-      if (changes.keys.first == key) {
-        callback(changes[key]);
-      }
-    };
-
-    _keyListeners[callback] = listen;
-    return _concrete.subject.addListener(listen);
-  }
-
-  // /// Remove listen of your container
-  // void removeKeyListen(Function(Map<String, dynamic>) callback) {
-  //   _concrete.subject.removeListener(_keyListeners[callback]);
-  // }
-
-  // /// Remove listen of your container
-  // void removeListen(void Function() listener) {
-  //   _concrete.subject.removeListener(listener);
-  // }
 
   /// Write data on your container
   Future<void> write(String key, dynamic value) async {
-    writeInMemory(key, value);
-    // final _encoded = json.encode(value);
-    // await _concrete.write(key, json.decode(_encoded));
-
-    return _tryFlush();
-  }
-
-  void writeInMemory(String key, dynamic value) {
     _concrete.write(key, value);
+    await _concrete.flush();
+    _notifyListeners(key, value);
   }
 
-  /// Write data on your only if data is null
+  /// Write data only if data is null
   Future<void> writeIfNull(String key, dynamic value) async {
-    if (read(key) != null) return;
-    return write(key, value);
+    if (read(key) == null) {
+      await write(key, value);
+    }
   }
 
-  /// remove data from container by key
+  /// Remove data from container by key
   Future<void> remove(String key) async {
     _concrete.remove(key);
-    return _tryFlush();
+    await _concrete.flush();
+    _notifyListeners(key, null);
   }
 
-  /// clear all data on your container
+  /// Clear all data on your container
   Future<void> erase() async {
     _concrete.clear();
-    return _tryFlush();
+    await _concrete.flush();
+    _notifyListeners(null, null);
   }
 
   Future<void> save() async {
-    return _tryFlush();
+    await _concrete.flush();
   }
 
-  Future<void> _tryFlush() async {
-    return microtask.exec(_addToQueue);
-  }
-
-  Future _addToQueue() {
-    return queue.add(_flush);
-  }
-
-  Future<void> _flush() async {
-    try {
-      await _concrete.flush();
-    } catch (e) {
-      rethrow;
+  /// Listen for changes in your container
+  void listenKey(String key, void Function(dynamic) callback) {
+    if (_listeners[key] == null) {
+      _listeners[key] = [];
     }
-    return;
+    _listeners[key]!.add(callback);
   }
 
-  late StorageImpl _concrete;
+  void _notifyListeners(String? key, dynamic value) {
+    if (key != null && _listeners[key] != null) {
+      for (var listener in _listeners[key]!) {
+        listener(value);
+      }
+    }
+  }
 
-  GetQueue queue = GetQueue();
-
-  /// listenable of container
+  /// Listenable of container
   ValueStorage<Map<String, dynamic>> get listenable => _concrete.subject;
 
-  /// Start the storage drive. Important: use await before calling this api, or side effects will happen.
-  late Future<bool> initStorage;
-
-  Map<String, dynamic>? _initialData;
+  Map<String, dynamic> get changes => _concrete.subject.changes;
 }
-
-class Microtask {
-  int _version = 0;
-  int _microtask = 0;
-
-  void exec(Function callback) {
-    if (_microtask == _version) {
-      _microtask++;
-      scheduleMicrotask(() {
-        _version++;
-        _microtask = _version;
-        callback();
-      });
-    }
-  }
-}
-
-typedef KeyCallback = Function(String);

@@ -4,7 +4,7 @@ import 'package:sunday_get_storage/sunday_get_storage.dart';
 void main() {
   final counter = 'counter';
   final isDarkMode = 'isDarkMode';
-  GetStorage box = GetStorage();
+  GetStorage box = GetStorage("main");
   test('GetStorage read and write operation', () {
     box.write(counter, 0);
     expect(box.read(counter), 0);
